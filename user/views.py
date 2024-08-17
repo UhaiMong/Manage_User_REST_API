@@ -5,18 +5,42 @@ from rest_framework.response import Response
 from .import serializers
 from .import models
 from django.contrib.auth import authenticate,login,logout
+from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_decode,urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
+from rest_framework import status
+import logging
+from .serializers import ProfileUpdateSerializer
 
 # Create your views here.
 
 class UserViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = models.UserModel.objects.all()
     serializer_class = serializers.UserSerializer
-    
+
+class ProfileViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = models.Profile.objects.all()
+    serializer_class = serializers.ProfileSerializer
+
+# Profile update api view
+class ProfileUpdateApiView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        serializer = ProfileUpdateSerializer(request.user)
+        return Response(serializer.data)
+
+    def put(self, request):
+        serializer = ProfileUpdateSerializer(request.user, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Profile updated successfully"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 # User Registration API View
 class UserRegistrationApiView(APIView):
     serializer_class = serializers.UserRegistrationSerializer
@@ -28,8 +52,8 @@ class UserRegistrationApiView(APIView):
             print(user)
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
-            return Response("Your Registration is successful")
-        Response(serializer.errors)
+            return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
+        return Response({"error": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
 
 # User Login API View
 class UserLoginApiView(APIView):
@@ -49,8 +73,19 @@ class UserLoginApiView(APIView):
         return Response(serializer.errors)
     
 # User logout API View
+logger = logging.getLogger(__name__)
+
 class UserLogoutApiView(APIView):
-    def get(self,request):
-        request.user.auth_token.delete()
-        logout(request)
-        return redirect('login')
+    permission_classes = [IsAuthenticated]
+    def get(self, request):
+        if request.user.is_authenticated:
+            logger.info(f"User {request.user.id} is authenticated and attempting to log out.")
+            request.user.auth_token.delete()
+            logout(request)
+            return Response({"success": "Logged out successfully"}, status=200)
+        else:
+            logger.warning("Logout attempt failed: User is not authenticated.")
+            logger.debug(f"Headers received: {request.headers}")
+            logger.debug(f"Token in request: {request.META.get('HTTP_AUTHORIZATION')}")
+            return Response({"error": "User is not logged in"}, status=400)
+

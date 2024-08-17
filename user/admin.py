@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserModel
+from .models import UserModel,Profile
 # Register your models here.
 
 class UserModelAdmin(admin.ModelAdmin):
@@ -11,3 +11,4 @@ class UserModelAdmin(admin.ModelAdmin):
         return obj.user.last_name
     
 admin.site.register(UserModel,UserModelAdmin)
+admin.site.register(Profile)
