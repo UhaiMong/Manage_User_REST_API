@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .import models
 from .models import Profile
 from django.contrib.auth.models import User
+from django.core.validators import MinLengthValidator
+from django.contrib.auth.password_validation import validate_password
 
 class UserSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(many=False)
@@ -13,6 +15,10 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(required=True)
+    password = serializers.CharField(
+        validators=[MinLengthValidator(6), validate_password],
+        write_only=True
+    )
 
     class Meta:
         model = User
@@ -50,10 +56,32 @@ class UserLoginSerializer(serializers.Serializer):
     username = serializers.CharField(required=True)
     password = serializers.CharField(required=True)
     
+    
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'username']
+        
 class ProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
+
     class Meta:
         model = Profile
-        fields = ['profileImage']
+        fields = ['user', 'profileImage']
+
+    def update(self, instance, validated_data):
+        user_data = validated_data.pop('user')
+        user = instance.user
+
+        for field, value in user_data.items():
+            setattr(user, field, value)
+        user.save()
+
+        for field, value in validated_data.items():
+            setattr(instance, field, value)
+        instance.save()
+
+        return instance
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer()

@@ -11,7 +11,7 @@ class UserModel(models.Model):
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}"
     class Meta:
-        verbose_name_plural = 'All User'
+        verbose_name_plural = 'Authentic User'
         
 # User Profile
 

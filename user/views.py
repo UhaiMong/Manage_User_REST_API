@@ -23,16 +23,23 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.UserSerializer
 
 class ProfileViewSet(viewsets.ModelViewSet):
+    # permission_classes = [IsAuthenticated]
+    # queryset = models.Profile.objects.all()
+    # serializer_class = serializers.ProfileSerializer
     permission_classes = [IsAuthenticated]
-    queryset = models.Profile.objects.all()
     serializer_class = serializers.ProfileSerializer
+
+    def get_queryset(self):
+        # Return the profile for the logged-in user only
+        return models.Profile.objects.filter(user=self.request.user)
+
+    def get_object(self):
+        # Get the logged-in user's profile
+        return self.get_queryset().first()
 
 # Profile update api view
 class ProfileUpdateApiView(APIView):
     permission_classes = [IsAuthenticated]
-    def get(self, request):
-        serializer = ProfileUpdateSerializer(request.user)
-        return Response(serializer.data)
 
     def put(self, request):
         serializer = ProfileUpdateSerializer(request.user, data=request.data)
@@ -40,6 +47,7 @@ class ProfileUpdateApiView(APIView):
             serializer.save()
             return Response({"message": "Profile updated successfully"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 # User Registration API View
 class UserRegistrationApiView(APIView):
@@ -52,8 +60,9 @@ class UserRegistrationApiView(APIView):
             print(user)
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
-            return Response({"message": "User registered successfully"}, status=status.HTTP_201_CREATED)
-        return Response({"error": "Something went wrong"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "success"}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 # User Login API View
 class UserLoginApiView(APIView):
@@ -67,7 +76,7 @@ class UserLoginApiView(APIView):
             if user:
                 token,_ = Token.objects.get_or_create(user=user)
                 login(request,user)
-                return Response({'token':token.key,'user_id':user.id})
+                return Response({'token':token.key,'user_id':user.id,"message":"success"})
             else:
                 return Response({'error':'Invalid Credential'})
         return Response(serializer.errors)
