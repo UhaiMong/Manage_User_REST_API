@@ -11,16 +11,22 @@ from django.utils.http import urlsafe_base64_decode,urlsafe_base64_encode
 from django.utils.encoding import force_bytes
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import status
+from .serializers import ProfileSerializer
+from django.http import JsonResponse
 import logging
-from .serializers import ProfileUpdateSerializer
+
+# Email sending
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
 
 # Create your views here.
 
 class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = models.UserModel.objects.all()
-    serializer_class = serializers.UserSerializer
+    serializer_class = serializers.AuthenticUserSerializer
 
 class ProfileViewSet(viewsets.ModelViewSet):
     # permission_classes = [IsAuthenticated]
@@ -40,15 +46,21 @@ class ProfileViewSet(viewsets.ModelViewSet):
 # Profile update api view
 class ProfileUpdateApiView(APIView):
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
 
-    def put(self, request):
-        serializer = ProfileUpdateSerializer(request.user, data=request.data)
+    def put(self, request, *args, **kwargs):
+        try:
+            profile = models.Profile.objects.get(user=request.user)
+        except models.Profile.DoesNotExist:
+            return Response({"error": "Profile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ProfileSerializer(profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            return Response({"message": "Profile updated successfully"}, status=status.HTTP_200_OK)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
+    
+    
 # User Registration API View
 class UserRegistrationApiView(APIView):
     serializer_class = serializers.UserRegistrationSerializer
@@ -60,10 +72,30 @@ class UserRegistrationApiView(APIView):
             print(user)
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
+            confirm_link = f"http://127.0.0.1:8000/user/active/{uid}/{token}"
+            email_subject = "Account activation"
+            email_body = render_to_string('account_active.html',{'confirm_link':confirm_link})
+            email = EmailMultiAlternatives(email_subject,'',to=[user.email])
+            email.attach_alternative(email_body,"text/html")
+            email.send()
             return Response({"message": "success"}, status=status.HTTP_201_CREATED)
         else:
             return Response({"errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+# activate function
+
+def activate(request,uid64,token):
+    try:
+        uid = urlsafe_base64_decode(uid64).decode()
+        user = User._default_manager.get(pk=uid)
+    except(User.DoesNotExist):
+        user = None
+    if user is not None and default_token_generator.check_token(user,token):
+        user.is_active=True
+        user.save()
+        return JsonResponse({'status': 'success', 'message': 'Account activated successfully.'})
+    else:
+        return JsonResponse({'status': 'error', 'message': 'Activation link is invalid.'}) 
 # User Login API View
 class UserLoginApiView(APIView):
     def post(self,request):
