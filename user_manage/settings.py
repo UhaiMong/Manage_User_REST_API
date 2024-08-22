@@ -15,7 +15,8 @@ SECRET_KEY = 'django-insecure-klp1dz)&%r*q8%w!gbf2!8o$hs=8t0bg=bfo-z&$20&rw9t!+#
 DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
-CSRF_TRUSTED_ORIGINS = ["http://127.0.0.1:8000"]
+CORS_ORIGIN_ALLOW_ALL = True
+CSRF_TRUSTED_ORIGINS = ["https://manage-user-rest-api.onrender.com","http://127.0.0.1:8000"]
 CORS_ALLOWED_ORIGINS = ['http://127.0.0.1:5500']
 
 
@@ -37,9 +38,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
