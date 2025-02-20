@@ -21,3 +21,13 @@ class Profile(models.Model):
     
     def __str__(self):
         return f"{self.user.first_name} {self.user.last_name}"
+    
+class AlumniInfo(models.Model):
+    full_name = models.CharField(max_length=255)
+    department = models.CharField(max_length=255)
+    batch_no = models.IntegerField()
+    contribution = models.CharField(max_length=255)
+    hobbies = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.full_name

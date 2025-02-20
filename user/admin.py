@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserModel,Profile
+from .models import UserModel,Profile,AlumniInfo
 # Register your models here.
 
 class UserModelAdmin(admin.ModelAdmin):
@@ -12,3 +12,7 @@ class UserModelAdmin(admin.ModelAdmin):
     
 admin.site.register(UserModel,UserModelAdmin)
 admin.site.register(Profile)
+
+admin.site.register(AlumniInfo)
+class AlumniModelAdmin(admin.ModelAdmin):
+    list_display = ('fullName', 'department', 'batchNo', 'contribution', 'hobbies')

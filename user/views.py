@@ -12,8 +12,8 @@ from django.utils.encoding import force_bytes
 from django.contrib.auth.models import User
 from rest_framework.authtoken.models import Token
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework import status
-from .serializers import ProfileSerializer
+from rest_framework import status,generics
+from .serializers import ProfileSerializer,AlumniSerializer
 from django.http import JsonResponse
 import logging
 
@@ -129,4 +129,15 @@ class UserLogoutApiView(APIView):
             logger.debug(f"Headers received: {request.headers}")
             logger.debug(f"Token in request: {request.META.get('HTTP_AUTHORIZATION')}")
             return Response({"error": "User is not logged in"}, status=400)
+        
+
+# List and Create
+class AlumniListCreateView(generics.ListCreateAPIView):
+    queryset = models.AlumniInfo.objects.all()
+    serializer_class = AlumniSerializer
+
+# Retrieve, Update, and Delete
+class AlumniDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = models.AlumniInfo.objects.all()
+    serializer_class = AlumniSerializer
 

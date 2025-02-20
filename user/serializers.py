@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .import models
-from .models import Profile
+from .models import Profile,AlumniInfo
 from django.contrib.auth.models import User
 from django.core.validators import MinLengthValidator
 from django.contrib.auth.password_validation import validate_password
@@ -68,3 +68,10 @@ class AuthenticUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.UserModel
         fields = ['user','department','mobileNumber','profileImage']
+
+
+
+class AlumniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AlumniInfo
+        fields = '__all__' 

@@ -16,4 +16,6 @@ urlpatterns = [
     path('logout/', views.UserLogoutApiView.as_view(),name='logout'),
     path('profile_update/', views.ProfileUpdateApiView.as_view(),name='profile_update'),
     path('active/<uid64>/<token>', views.activate,name='active'),
+        path('alumnus/', views.AlumniListCreateView.as_view(), name='alumni-list-create'),
+    path('alumnus/<int:pk>/', views.AlumniDetailView.as_view(), name='alumni-detail'),
 ]
